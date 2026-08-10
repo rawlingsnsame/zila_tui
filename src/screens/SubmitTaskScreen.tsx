@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Box, Text, useInput } from "ink";
 import { theme } from "../ui/theme.js";
+import { Cursor } from "../ui/Cursor.js";
 
 interface SubmitTaskScreenProps {
   onComplete: () => void;
@@ -18,9 +19,10 @@ export const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ onComplete }
 
   useEffect(() => {
     if (completed) return;
+    setCursorOn(true);
     const interval = setInterval(() => setCursorOn((v) => !v), 500);
     return () => clearInterval(interval);
-  }, [completed]);
+  }, [completed, activeField]);
 
   useInput((char, key) => {
     if (completed) {
@@ -38,6 +40,16 @@ export const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ onComplete }
       return;
     }
 
+    if (key.upArrow) {
+      setActiveField((prev) => (prev > 0 ? prev - 1 : 2));
+      return;
+    }
+
+    if (key.downArrow) {
+      setActiveField((prev) => (prev < 2 ? prev + 1 : 0));
+      return;
+    }
+
     if (key.return) {
       if (activeField < 2) {
         setActiveField((prev) => prev + 1);
@@ -48,14 +60,22 @@ export const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ onComplete }
     }
 
     if (activeField === 0) {
-      if (key.backspace || key.delete) setTaskId((prev) => prev.slice(0, -1));
-      else if (char) setTaskId((prev) => prev + char);
+      if (key.backspace || key.delete) {
+        setTaskId((prev) => prev.slice(0, -1));
+      } else if (char) {
+        setTaskId((prev) => prev + char);
+        setCursorOn(true);
+      }
       return;
     }
 
     if (activeField === 1) {
-      if (key.backspace || key.delete) setDescription((prev) => prev.slice(0, -1));
-      else if (char) setDescription((prev) => prev + char);
+      if (key.backspace || key.delete) {
+        setDescription((prev) => prev.slice(0, -1));
+      } else if (char) {
+        setDescription((prev) => prev + char);
+        setCursorOn(true);
+      }
       return;
     }
 
@@ -64,24 +84,39 @@ export const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ onComplete }
         setState((prev) => {
           const index = taskStates.indexOf(prev);
           const nextIndex = ((index === -1 ? 0 : index) + taskStates.length - 1) % taskStates.length;
-          return taskStates[nextIndex] as typeof taskStates[number];
+          return taskStates[nextIndex]!;
         });
       }
       if (key.rightArrow || key.downArrow) {
         setState((prev) => {
           const index = taskStates.indexOf(prev);
           const nextIndex = ((index === -1 ? 0 : index) + 1) % taskStates.length;
-          return taskStates[nextIndex] as typeof taskStates[number];
+          return taskStates[nextIndex]!;
         });
       }
     }
   });
 
+  const boxFor = (title: string, value: string, active: boolean, hint: string) => (
+    <Box flexDirection="column" borderStyle="single" borderColor={active ? theme.colors.primary : theme.colors.border} paddingX={1} paddingY={1} marginBottom={1}>
+      <Box flexDirection="row" alignItems="center" gap={1}>
+        <Text color={active ? theme.colors.primary : theme.colors.dim}>{active ? theme.symbols.pointer : " "}</Text>
+        <Text color={active ? theme.colors.white : theme.colors.muted} bold>{title}</Text>
+      </Box>
+      <Box marginTop={1}>
+        <Text color={active ? theme.colors.white : theme.colors.text}>{value || hint}</Text>
+      </Box>
+      {active && <Text color={theme.colors.dim}>{hint}</Text>}
+    </Box>
+  );
+
+  const activeHint = activeField === 2 ? "Use ←/→ to change state, ↑/↓ to move fields." : "Use ↑/↓ to move between fields and type to edit.";
+
   return (
-    <Box flexDirection="column" paddingX={1} paddingY={1}>
+    <Box flexDirection="column" paddingX={1} paddingY={1} borderStyle="round" borderColor={theme.colors.accent}>
       <Box marginBottom={1}>
         <Text color={theme.colors.primary} bold>ZILA</Text>
-        <Text color={theme.colors.muted}>› submit-task</Text>
+        <Text color={theme.colors.muted}>submit-task</Text>
       </Box>
 
       {completed ? (
@@ -100,18 +135,18 @@ export const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ onComplete }
       ) : (
         <>
           <Box flexDirection="column" width={80} marginBottom={1}>
-            <Box flexDirection="column" borderStyle="round" borderColor={activeField === 0 ? theme.colors.primary : theme.colors.border} paddingX={1} paddingY={1} marginBottom={1}>
-              <Text color={activeField === 0 ? theme.colors.primary : theme.colors.muted} bold>Task ID</Text>
-              <Text color={theme.colors.text}>{taskId || "Add the task identifier."}</Text>
-            </Box>
-            <Box flexDirection="column" borderStyle="round" borderColor={activeField === 1 ? theme.colors.primary : theme.colors.border} paddingX={1} paddingY={1} marginBottom={1}>
-              <Text color={activeField === 1 ? theme.colors.primary : theme.colors.muted} bold>Description</Text>
-              <Text color={theme.colors.text}>{description || "Describe the task work or update."}</Text>
-            </Box>
-            <Box flexDirection="column" borderStyle="round" borderColor={activeField === 2 ? theme.colors.primary : theme.colors.border} paddingX={1} paddingY={1}>
-              <Text color={activeField === 2 ? theme.colors.primary : theme.colors.muted} bold>Status</Text>
-              <Text color={theme.colors.text}>{state}</Text>
-              {activeField === 2 && <Text color={theme.colors.dim}>Use arrow keys to choose state.</Text>}
+            {boxFor("Task ID", taskId, activeField === 0, "Add the task identifier.")}
+            {boxFor("Description", description, activeField === 1, "Describe the task work or update.")}
+            <Box flexDirection="column" borderStyle="single" borderColor={activeField === 2 ? theme.colors.primary : theme.colors.border} paddingX={1} paddingY={1} marginBottom={1}>
+              <Box flexDirection="row" alignItems="center" gap={1}>
+                <Text color={activeField === 2 ? theme.colors.primary : theme.colors.dim}>{activeField === 2 ? theme.symbols.pointer : " "}</Text>
+                <Text color={activeField === 2 ? theme.colors.white : theme.colors.muted} bold>Status</Text>
+              </Box>
+              <Box flexDirection="row" alignItems="center" marginTop={1} gap={1}>
+                <Text color={theme.colors.white}>{state}</Text>
+                {activeField === 2 && <Cursor on={cursorOn} />}
+              </Box>
+              {activeField === 2 && <Text color={theme.colors.dim}>Use ←/→ to change state.</Text>}
             </Box>
           </Box>
 
@@ -128,10 +163,9 @@ export const SubmitTaskScreen: React.FC<SubmitTaskScreenProps> = ({ onComplete }
             </Box>
           </Box>
 
-          <Box marginTop={1}>
-            <Text color={theme.colors.dim}>Tab</Text><Text color={theme.colors.border}> ↹ </Text><Text color={theme.colors.dim}>switch · </Text>
-            <Text color={theme.colors.dim}>Enter</Text><Text color={theme.colors.border}> ↵ </Text><Text color={theme.colors.dim}>next / submit · </Text>
-            <Text color={theme.colors.dim}>Esc</Text><Text color={theme.colors.border}> ⎋ </Text><Text color={theme.colors.dim}>cancel</Text>
+          <Box flexDirection="column" marginTop={1}>
+            <Text color={theme.colors.dim}>{activeHint}</Text>
+            <Text color={theme.colors.dim}>Tab: switch fields · Enter: next / submit · Esc: cancel</Text>
           </Box>
         </>
       )}
