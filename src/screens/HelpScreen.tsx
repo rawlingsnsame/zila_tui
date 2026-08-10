@@ -5,10 +5,12 @@ import { Divider } from "../ui/Divider.js";
 import { getRegisteredCommands, type ZilaCommand } from "../commands/registry.js";
 
 const CATEGORIES: Array<{ key: ZilaCommand["category"]; label: string }> = [
-  { key: "setup",  label: "Setup" },
-  { key: "info",   label: "Info" },
+  { key: "zask",   label: "Zask" },
+  { key: "workflow", label: "Workflow" },
   { key: "search", label: "Search" },
   { key: "agent",  label: "Agent" },
+  { key: "setup",  label: "Setup" },
+  { key: "info",   label: "Info" },
 ];
 
 interface HelpScreenProps {
@@ -63,6 +65,28 @@ export const HelpScreen: React.FC<HelpScreenProps> = ({ onClose, onSelect }) => 
       </Box>
 
       <Divider width={40} />
+
+      <Box
+        flexDirection="column"
+        marginY={1}
+        paddingX={1}
+        paddingY={1}
+        borderStyle="single"
+        borderColor={theme.colors.accent}
+      >
+        <Text bold color={theme.colors.secondary}>Zask Task Hub</Text>
+        <Text color={theme.colors.info}>
+          Submit reports, update tasks, and log issues for interns and office work.
+        </Text>
+        <Box marginTop={1} flexDirection="row" gap={1}>
+          <Text color={theme.colors.success}>•</Text>
+          <Text color={theme.colors.text}>Use <Text bold>zask</Text> for the central task hub.</Text>
+        </Box>
+        <Box flexDirection="row" gap={1}>
+          <Text color={theme.colors.success}>•</Text>
+          <Text color={theme.colors.text}>Use <Text bold>submit-report</Text>, <Text bold>submit-task</Text>, or <Text bold>complain</Text>.</Text>
+        </Box>
+      </Box>
 
       {CATEGORIES.map(({ key, label }) => {
         const cmds = allCommands.filter((c) => c.category === key);

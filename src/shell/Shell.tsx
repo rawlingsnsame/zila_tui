@@ -8,6 +8,8 @@ import { AuthScreen }     from "../screens/AuthScreen.js";
 import { AssistantScreen } from "../screens/AssistantScreen.js";
 import { AboutScreen }    from "../screens/AboutScreen.js";
 import { InfoScreen }     from "../screens/InfoScreen.js";
+import { SubmitReportScreen } from "../screens/SubmitReportScreen.js";
+import { SubmitTaskScreen }   from "../screens/SubmitTaskScreen.js";
 // import { TrackScreen }     from "../screens/TrackScreen.js";
 import { OutputHistory, type OutputLine } from "./OutputHistory.js";
 import { InputPrompt }    from "./InputPrompt.js";
@@ -34,12 +36,14 @@ export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
   const [running,       setRunning]       = useState(false);
   const [isExiting,     setIsExiting]     = useState(false);
   const [exitMessage,   setExitMessage]   = useState<string | undefined>();
-  const [showHelp,      setShowHelp]      = useState(false);
-  const [showInit,      setShowInit]      = useState(false);
-  const [showAuth,      setShowAuth]      = useState(false);
-  const [showAssistant, setShowAssistant] = useState(false);
-  const [showAbout,     setShowAbout]     = useState(false);
-  const [showInfo,      setShowInfo]      = useState(false);
+  const [showHelp,         setShowHelp]         = useState(false);
+  const [showInit,         setShowInit]         = useState(false);
+  const [showAuth,         setShowAuth]         = useState(false);
+  const [showAssistant,    setShowAssistant]    = useState(false);
+  const [showAbout,        setShowAbout]        = useState(false);
+  const [showInfo,         setShowInfo]         = useState(false);
+  const [showSubmitReport, setShowSubmitReport] = useState(false);
+  const [showSubmitTask,   setShowSubmitTask]   = useState(false);
   // const [showTrackStart, setShowTrackStart] = useState(false);
   // const [showTrackStop, setShowTrackStop] = useState(false);
   // const [showTrackStatus, setShowTrackStatus] = useState(false);
@@ -64,6 +68,8 @@ export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
     startAssistant: () => setShowAssistant(true),
     startAbout: () => setShowAbout(true),
     startInfo: () => setShowInfo(true),
+    startSubmitReport: () => setShowSubmitReport(true),
+    startSubmitTask: () => setShowSubmitTask(true),
     clearHistory: () => setHistory([]),
     // startTrackStart: () => setShowTrackStart(true),
     // startTrackStop: () => setShowTrackStop(true),
@@ -138,6 +144,10 @@ export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
           onSelect={(name) => { setShowHelp(false); handleCommand(name, true); }}
           clearHistory={() => setHistory([])}
         />
+      ) : showSubmitReport ? (
+        <SubmitReportScreen onComplete={() => setShowSubmitReport(false)} />
+      ) : showSubmitTask ? (
+        <SubmitTaskScreen onComplete={() => setShowSubmitTask(false)} />
       ) : showInit ? (
         <InitScreen onComplete={() => {
           setShowInit(false);
