@@ -1,25 +1,24 @@
 import React, { useState, useCallback } from "react";
 import { Box, useInput } from "ink";
-import { SplashScreen }   from "../screens/SplashScreen.js";
-import { ExitScreen }     from "../screens/ExitScreen.js";
-import { HelpScreen }     from "../screens/HelpScreen.js";
-import { InitScreen }     from "../screens/InitScreen.js";
-import { AuthScreen }     from "../screens/AuthScreen.js";
+import { SplashScreen } from "../screens/SplashScreen.js";
+import { ExitScreen } from "../screens/ExitScreen.js";
+import { HelpScreen } from "../screens/HelpScreen.js";
+import { InitScreen } from "../screens/InitScreen.js";
+import { AuthScreen } from "../screens/AuthScreen.js";
 import { AssistantScreen } from "../screens/AssistantScreen.js";
-import { AboutScreen }    from "../screens/AboutScreen.js";
-import { InfoScreen }     from "../screens/InfoScreen.js";
+import { AboutScreen } from "../screens/AboutScreen.js";
+import { InfoScreen } from "../screens/InfoScreen.js";
 import { SubmitReportScreen } from "../screens/SubmitReportScreen.js";
-import { SubmitTaskScreen }   from "../screens/SubmitTaskScreen.js";
-// import { TrackScreen }     from "../screens/TrackScreen.js";
+import { SubmitTaskScreen } from "../screens/SubmitTaskScreen.js";
 import { OutputHistory, type OutputLine } from "./OutputHistory.js";
-import { InputPrompt }    from "./InputPrompt.js";
+import { InputPrompt } from "./InputPrompt.js";
 import {
   findCommand,
   getRegisteredCommands,
   type ShellContext,
 } from "../commands/registry.js";
 import { registerAllCommands } from "../commands/index.js";
-import { levenshtein }   from "../utils/string.js";
+import { levenshtein } from "../utils/string.js";
 
 registerAllCommands();
 
@@ -31,28 +30,24 @@ export interface ShellProps {
 }
 
 export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
-  const [splashDone,    setSplashDone]    = useState(false);
-  const [history,       setHistory]       = useState<OutputLine[]>([]);
-  const [running,       setRunning]       = useState(false);
-  const [isExiting,     setIsExiting]     = useState(false);
-  const [exitMessage,   setExitMessage]   = useState<string | undefined>();
-  const [showHelp,         setShowHelp]         = useState(false);
-  const [showInit,         setShowInit]         = useState(false);
-  const [showAuth,         setShowAuth]         = useState(false);
-  const [showAssistant,    setShowAssistant]    = useState(false);
-  const [showAbout,        setShowAbout]        = useState(false);
-  const [showInfo,         setShowInfo]         = useState(false);
+  const [splashDone, setSplashDone] = useState(false);
+  const [history, setHistory] = useState<OutputLine[]>([]);
+  const [running, setRunning] = useState(false);
+  const [isExiting, setIsExiting] = useState(false);
+  const [exitMessage, setExitMessage] = useState<string | undefined>();
+  const [showHelp, setShowHelp] = useState(false);
+  const [showInit, setShowInit] = useState(false);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
+  const [showInfo, setShowInfo] = useState(false);
   const [showSubmitReport, setShowSubmitReport] = useState(false);
-  const [showSubmitTask,   setShowSubmitTask]   = useState(false);
-  // const [showTrackStart, setShowTrackStart] = useState(false);
-  // const [showTrackStop, setShowTrackStop] = useState(false);
-  // const [showTrackStatus, setShowTrackStatus] = useState(false);
+  const [showSubmitTask, setShowSubmitTask] = useState(false);
 
   const pushLine = useCallback(
     (text: string, type: OutputLine["type"] = "default") => {
       setHistory((prev) => {
         const updated = [...prev, { id: nextId(), text, type }];
-        // Keep max 500 lines to prevent heap exhaustion
         return updated.length > 500 ? updated.slice(-500) : updated;
       });
     },
@@ -60,8 +55,13 @@ export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
   );
 
   const shellContext: ShellContext = {
-    exit: (msg?: string) => { setExitMessage(msg); setIsExiting(true); },
-    executeCommand: async (command: string) => { await handleCommand(command, false); },
+    exit: (msg?) => {
+      setExitMessage(msg);
+      setIsExiting(true);
+    },
+    executeCommand: async (cmd) => {
+      await handleCommand(cmd, false);
+    },
     showHelp: () => setShowHelp(true),
     startInit: () => setShowInit(true),
     startAuth: () => setShowAuth(true),
@@ -71,14 +71,11 @@ export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
     startSubmitReport: () => setShowSubmitReport(true),
     startSubmitTask: () => setShowSubmitTask(true),
     clearHistory: () => setHistory([]),
-    // startTrackStart: () => setShowTrackStart(true),
-    // startTrackStop: () => setShowTrackStop(true),
-    // startTrackStatus: () => setShowTrackStatus(true),
   };
 
   async function handleCommand(rawInput: string, echo: boolean) {
     if (!rawInput) return;
-    if (echo) pushLine(`zila❯ ${rawInput}`, "dim");
+    if (echo) pushLine(`zila ❯ ${rawInput}`, "dim");
 
     setRunning(true);
     const [cmdName = "", ...args] = rawInput.trim().split(/\s+/);
@@ -92,19 +89,26 @@ export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
         try {
           await cmd.handler(args, pushLine, shellContext);
         } catch (err: unknown) {
-          const msg = err instanceof Error ? err.message : String(err);
-          pushLine(`Error running "${cmdName}": ${msg}`, "error");
+          pushLine(
+            `Error running "${cmdName}": ${err instanceof Error ? err.message : String(err)}`,
+            "error",
+          );
         }
       }
     } else {
       pushLine(`Unknown command: "${cmdName}"`, "error");
       const names = getRegisteredCommands().map((c) => c.name);
-      let closest = ""; let minDist = Infinity;
+      let closest = "";
+      let minDist = Infinity;
       for (const name of names) {
         const d = levenshtein(cmdName, name);
-        if (d < minDist) { minDist = d; closest = name; }
+        if (d < minDist) {
+          minDist = d;
+          closest = name;
+        }
       }
-      if (minDist <= 2 && closest) pushLine(`Did you mean: ${closest}?`, "warning");
+      if (minDist <= 2 && closest)
+        pushLine(`Did you mean: ${closest}?`, "warning");
       pushLine("Type  help  to see all available commands.", "dim");
     }
 
@@ -112,11 +116,23 @@ export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
   }
 
   useInput(
-    (char, key) => { if (key.ctrl && char === "\x03") setIsExiting(true); },
-    { isActive: splashDone && !isExiting && !showHelp && !showInit && !showAuth && !showAssistant && !showAbout && !showInfo },
+    (char, key) => {
+      if (key.ctrl && char === "\x03") setIsExiting(true);
+    },
+    {
+      isActive:
+        splashDone &&
+        !isExiting &&
+        !showHelp &&
+        !showInit &&
+        !showAuth &&
+        !showAssistant &&
+        !showAbout &&
+        !showInfo &&
+        !showSubmitReport &&
+        !showSubmitTask,
+    },
   );
-
-  // Screens
 
   if (!splashDone) {
     return (
@@ -141,7 +157,10 @@ export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
       {showHelp ? (
         <HelpScreen
           onClose={() => setShowHelp(false)}
-          onSelect={(name) => { setShowHelp(false); handleCommand(name, true); }}
+          onSelect={(name) => {
+            setShowHelp(false);
+            handleCommand(name, true);
+          }}
           clearHistory={() => setHistory([])}
         />
       ) : showSubmitReport ? (
@@ -149,18 +168,23 @@ export const Shell: React.FC<ShellProps> = ({ inkInstance }) => {
       ) : showSubmitTask ? (
         <SubmitTaskScreen onComplete={() => setShowSubmitTask(false)} />
       ) : showInit ? (
-        <InitScreen onComplete={() => {
-          setShowInit(false);
-          pushLine("Workspace ready. Type  assistant  to get started.", "success");
-        }}
-        clearHistory={() => setHistory([])}
+        <InitScreen
+          onComplete={() => setShowInit(false)}
+          // After init succeeds, open help so the user sees all commands
+          onShowHelp={() => {
+            setShowInit(false);
+            setShowHelp(true);
+          }}
+          clearHistory={() => setHistory([])}
         />
       ) : showAuth ? (
-        <AuthScreen onComplete={(success) => {
-          setShowAuth(false);
-          if (success) pushLine("Authenticated successfully.", "success");
-          else         pushLine("Authentication cancelled.", "warning");
-        }} />
+        <AuthScreen
+          onComplete={(success) => {
+            setShowAuth(false);
+            if (success) pushLine("Authenticated successfully.", "success");
+            else pushLine("Authentication cancelled.", "warning");
+          }}
+        />
       ) : showAssistant ? (
         <AssistantScreen
           inkInstance={inkInstance}

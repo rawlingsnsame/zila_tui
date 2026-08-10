@@ -1,16 +1,23 @@
 import React, { useState, useMemo } from "react";
 import { Box, Text, useInput } from "ink";
 import { theme } from "../ui/theme.js";
-import { Divider } from "../ui/Divider.js";
-import { getRegisteredCommands, type ZilaCommand } from "../commands/registry.js";
+import {
+  getRegisteredCommands,
+  type ZilaCommand,
+} from "../commands/registry.js";
 
-const CATEGORIES: Array<{ key: ZilaCommand["category"]; label: string }> = [
-  { key: "zask", label: "Zask" },
-  { key: "workflow", label: "Workflow" },
-  { key: "search", label: "Search" },
-  { key: "agent", label: "Agent" },
-  { key: "setup", label: "Setup" },
-  { key: "info", label: "Info" },
+// Category definitions
+const CATEGORIES: Array<{
+  key: ZilaCommand["category"];
+  label: string;
+  icon: string;
+}> = [
+  { key: "zask", label: "Zask", icon: "⚡" },
+  { key: "setup", label: "Setup", icon: "⚙" },
+  { key: "workflow", label: "Workflow", icon: "◈" },
+  { key: "info", label: "Info", icon: "ℹ" },
+  { key: "search", label: "Search", icon: "⌕" },
+  { key: "agent", label: "Agent", icon: "✦" },
 ];
 
 interface HelpScreenProps {
@@ -19,9 +26,15 @@ interface HelpScreenProps {
   clearHistory?: () => void;
 }
 
-export const HelpScreen: React.FC<HelpScreenProps> = ({ onClose, onSelect }) => {
+export const HelpScreen: React.FC<HelpScreenProps> = ({
+  onClose,
+  onSelect,
+}) => {
   const allCommands = useMemo(() => getRegisteredCommands(), []);
-  const selectableCmds = useMemo(() => allCommands.filter((c) => c.available), [allCommands]);
+  const selectableCmds = useMemo(
+    () => allCommands.filter((c) => c.available),
+    [allCommands],
+  );
   const [activeIdx, setActiveIdx] = useState(0);
 
   useInput((char, key) => {
@@ -37,12 +50,12 @@ export const HelpScreen: React.FC<HelpScreenProps> = ({ onClose, onSelect }) => 
     }
 
     if (key.upArrow) {
-      setActiveIdx((prev) => (prev > 0 ? prev - 1 : selectableCmds.length - 1));
+      setActiveIdx((p) => (p > 0 ? p - 1 : selectableCmds.length - 1));
       return;
     }
 
     if (key.downArrow) {
-      setActiveIdx((prev) => (prev < selectableCmds.length - 1 ? prev + 1 : 0));
+      setActiveIdx((p) => (p < selectableCmds.length - 1 ? p + 1 : 0));
       return;
     }
   });
@@ -50,67 +63,145 @@ export const HelpScreen: React.FC<HelpScreenProps> = ({ onClose, onSelect }) => 
   const activeCommand = selectableCmds[activeIdx];
 
   return (
-    <Box flexDirection="column" paddingX={2} paddingY={1} borderStyle="round" borderColor={theme.colors.border} marginTop={1}>
-      <Box flexDirection="row" justifyContent="space-between" marginBottom={1}>
-        <Box flexDirection="column" gap={0}>
-          <Text color={theme.colors.primary} bold>ZILA</Text>
-          <Text color={theme.colors.muted}>Interactive command reference</Text>
-        </Box>
+    <Box
+      flexDirection="column"
+      borderStyle="round"
+      borderColor={theme.colors.border}
+      paddingX={2}
+      paddingY={1}
+      marginTop={1}
+    >
+      {/* Title */}
+      <Box marginBottom={1} flexDirection="row" gap={2}>
+        <Text bold color={theme.colors.primary}>
+          ZILA
+        </Text>
+        <Text color={theme.colors.muted}>Interactive Command Reference</Text>
+      </Box>
 
-        <Box flexDirection="column" borderStyle="single" borderColor={theme.colors.accent} paddingX={1} paddingY={1}>
-          <Text color={theme.colors.secondary} bold>Zask Task Hub</Text>
-          <Text color={theme.colors.text}>Submit reports, update tasks, and log issues.</Text>
+      <Text color={theme.colors.border}>{"─".repeat(58)}</Text>
+
+      {/* Zask quick start box */}
+      <Box
+        flexDirection="column"
+        paddingX={1}
+        paddingY={1}
+        borderStyle="single"
+        borderColor={theme.colors.accent}
+        marginY={1}
+      >
+        <Text bold color={theme.colors.secondary}>
+          Zask quick start
+        </Text>
+        <Box flexDirection="column" marginTop={1} gap={0}>
+          <Text color={theme.colors.text}>
+            • Run <Text bold>zask</Text> to open the task hub.
+          </Text>
+          <Text color={theme.colors.text}>
+            • Use <Text bold>submit-report</Text> to send daily updates.
+          </Text>
+          <Text color={theme.colors.text}>
+            • Use <Text bold>submit-task</Text> to update a task state.
+          </Text>
+          <Text color={theme.colors.text}>
+            • Use <Text bold>complain</Text> to file an incident note.
+          </Text>
         </Box>
       </Box>
 
-      <Divider width={64} />
-
-      <Box flexDirection="column" paddingX={1} paddingY={1} borderStyle="single" borderColor={theme.colors.accent} marginY={1}>
-        <Text bold color={theme.colors.secondary}>Zask quick start</Text>
-        <Box flexDirection="column" marginTop={1} gap={1}>
-          <Text color={theme.colors.text}>• Run <Text bold>zask</Text> to open the task hub.</Text>
-          <Text color={theme.colors.text}>• Use <Text bold>submit-report</Text> to send daily updates.</Text>
-          <Text color={theme.colors.text}>• Use <Text bold>submit-task</Text> to update a task state.</Text>
-          <Text color={theme.colors.text}>• Use <Text bold>complain</Text> to file an incident note.</Text>
-        </Box>
-      </Box>
-
-      {CATEGORIES.map(({ key, label }) => {
+      {/* Command groups */}
+      {CATEGORIES.map(({ key, label, icon }) => {
         const cmds = allCommands.filter((c) => c.category === key);
         if (cmds.length === 0) return null;
 
         return (
           <Box flexDirection="column" marginTop={1} key={key}>
-            <Text bold color={theme.colors.muted}>{label.toUpperCase()}</Text>
-            <Box flexDirection="column" gap={1} marginTop={1}>
-              {cmds.map((cmd) => {
-                const isSelected = cmd.available && selectableCmds[activeIdx]?.name === cmd.name;
+            {/* Category header */}
+            <Box flexDirection="row" gap={1} marginBottom={1}>
+              <Text color={theme.colors.muted}>{icon}</Text>
+              <Text bold color={theme.colors.muted}>
+                {label.toUpperCase()}
+              </Text>
+            </Box>
 
-                return (
-                  <Box key={cmd.name} flexDirection="row" alignItems="center" gap={1}>
-                    <Text color={cmd.available ? (isSelected ? theme.colors.primary : theme.colors.dim) : theme.colors.border}>
-                      {cmd.available ? (isSelected ? theme.symbols.pointer : " ") : "·"}
-                    </Text>
-                    <Box flexDirection="column" width={22}>
-                      <Text color={!cmd.available ? theme.colors.dim : isSelected ? theme.colors.white : theme.colors.info} bold={isSelected}>
-                        {cmd.name}
+            {cmds.map((cmd) => {
+              const isSelected =
+                cmd.available && selectableCmds[activeIdx]?.name === cmd.name;
+
+              return (
+                <Box flexDirection="row" key={cmd.name} paddingLeft={1}>
+                  {/* Selection indicator */}
+                  <Box width={3} flexShrink={0}>
+                    {cmd.available ? (
+                      <Text
+                        color={
+                          isSelected ? theme.colors.primary : theme.colors.dim
+                        }
+                      >
+                        {isSelected ? theme.symbols.pointer : " "}
                       </Text>
-                      <Text color={cmd.available ? theme.colors.muted : theme.colors.border}>{cmd.usage}</Text>
-                    </Box>
-                    <Text color={cmd.available ? (isSelected ? theme.colors.text : theme.colors.muted) : theme.colors.border}>
-                      {cmd.description}
+                    ) : (
+                      <Text color={theme.colors.border}>·</Text>
+                    )}
+                  </Box>
+
+                  {/* Command name */}
+                  <Box width={18} flexShrink={0}>
+                    <Text
+                      color={
+                        !cmd.available
+                          ? theme.colors.dim
+                          : isSelected
+                            ? theme.colors.white
+                            : theme.colors.info
+                      }
+                      bold={isSelected}
+                    >
+                      {cmd.name}
                     </Text>
                   </Box>
-                );
-              })}
-            </Box>
+
+                  {/* Usage */}
+                  <Box width={26} flexShrink={0}>
+                    <Text
+                      color={isSelected ? theme.colors.text : theme.colors.dim}
+                    >
+                      {cmd.usage}
+                    </Text>
+                  </Box>
+
+                  {/* Description */}
+                  <Text
+                    color={
+                      cmd.available
+                        ? isSelected
+                          ? theme.colors.text
+                          : theme.colors.muted
+                        : theme.colors.border
+                    }
+                  >
+                    {cmd.description}
+                    {!cmd.available ? "  (coming soon)" : ""}
+                  </Text>
+                </Box>
+              );
+            })}
           </Box>
         );
       })}
 
       {activeCommand && (
-        <Box flexDirection="column" marginTop={1} borderStyle="single" borderColor={theme.colors.border} paddingX={1} paddingY={1}>
-          <Text color={theme.colors.secondary} bold>Selected</Text>
+        <Box
+          flexDirection="column"
+          marginTop={1}
+          borderStyle="single"
+          borderColor={theme.colors.border}
+          paddingX={1}
+          paddingY={1}
+        >
+          <Text color={theme.colors.secondary} bold>
+            Selected
+          </Text>
           <Text color={theme.colors.text}>{activeCommand.description}</Text>
           <Box flexDirection="row" gap={1} marginTop={1}>
             <Text color={theme.colors.info}>Usage:</Text>
@@ -119,9 +210,15 @@ export const HelpScreen: React.FC<HelpScreenProps> = ({ onClose, onSelect }) => 
         </Box>
       )}
 
-      <Box marginTop={2} paddingTop={1} borderStyle="single" borderTop borderColor={theme.colors.border} borderBottom={false} borderLeft={false} borderRight={false}>
+      {/* Footer */}
+      <Box marginTop={1}>
+        <Text color={theme.colors.border}>{"─".repeat(58)}</Text>
+      </Box>
+      <Box marginTop={0}>
         <Text color={theme.colors.dim}>
-          <Text color={theme.colors.text}>↑/↓</Text> move · <Text color={theme.colors.text}>Enter</Text> open · <Text color={theme.colors.text}>Esc/Q</Text> close
+          <Text color={theme.colors.text}>↑/↓</Text> navigate{"   "}
+          <Text color={theme.colors.text}>Enter</Text> run command{"   "}
+          <Text color={theme.colors.text}>Esc / Q</Text> close
         </Text>
       </Box>
     </Box>
