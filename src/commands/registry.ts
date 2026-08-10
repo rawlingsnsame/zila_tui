@@ -11,6 +11,8 @@ export interface ShellContext {
   startAuth: () => void;
   startAbout: () => void;
   startInfo: () => void;
+  startSubmitReport: () => void;
+  startSubmitTask: () => void;
   clearHistory: () => void;
 }
 
@@ -25,7 +27,7 @@ export interface ZilaCommand {
   aliases?: string[];
   description: string;
   usage: string;
-  category: "setup" | "search" | "agent" | "info";
+  category: "setup" | "search" | "agent" | "info" | "workflow" | "zask";
   handler: CommandHandler;
   available: boolean;
 }
